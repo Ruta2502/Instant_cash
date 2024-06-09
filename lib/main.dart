@@ -1,6 +1,5 @@
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
-import 'package:instant_cash/home.dart';
 import 'package:instant_cash/login/login.dart';
 import 'firebase_options.dart';
 

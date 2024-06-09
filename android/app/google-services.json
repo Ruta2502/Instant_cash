@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "962144233672",
+    "project_id": "instant-cash-2941d",
+    "storage_bucket": "instant-cash-2941d.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:962144233672:android:22df966c93260baf875dfd",
+        "android_client_info": {
+          "package_name": "com.example.instant_cash"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAhgoqGvo7Nfto-CGZXewjpzJprIPM5IeM"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
