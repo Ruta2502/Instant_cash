@@ -1,6 +1,7 @@
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
 import 'package:instant_cash/login/login.dart';
+import 'package:instant_cash/pancard.dart';
 import 'firebase_options.dart';
 
 void main() async {
@@ -22,6 +23,6 @@ class MyApp extends StatelessWidget {
         theme: ThemeData(
           useMaterial3: false,
         ),
-        home: LoginScreen());
+        home: PancardScreen());
   }
 }

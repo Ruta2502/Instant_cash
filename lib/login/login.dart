@@ -227,6 +227,9 @@ class _LoginScreenState extends State<LoginScreen> {
             height: 10,
           ),
           GestureDetector(
+            onTap: (){
+              Navigator.pop(context);
+            },
             child: Container(
               height: 40,
               decoration: BoxDecoration(
