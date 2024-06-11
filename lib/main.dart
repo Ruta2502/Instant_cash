@@ -1,8 +1,16 @@
+import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
+import 'package:instant_cash/login/login.dart';
+import 'firebase_options.dart';
 
-void main() {
-  runApp(const MyApp());
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
+
+  runApp(MyApp());
 }
+
+
 
 class MyApp extends StatelessWidget {
   const MyApp({super.key});
@@ -11,25 +19,9 @@ class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-
-        home: DemoApp()
-    );
-  }
-}
-class DemoApp extends StatefulWidget {
-  const DemoApp({super.key});
-
-  @override
-  State<DemoApp> createState() => _DemoAppState();
-}
-
-class _DemoAppState extends State<DemoApp> {
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      body: Center(
-        child: Text('Instant Cash'),
-      ),
-    );
+        theme: ThemeData(
+          useMaterial3: false,
+        ),
+        home: LoginScreen());
   }
 }
