@@ -1,0 +1,2 @@
+typedef OnTap = void Function();
+

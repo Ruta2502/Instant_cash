@@ -11,7 +11,8 @@ class firebaseconst {
         verificationCompleted: verificationCompleted,
         verificationFailed: verificationFailed,
         codeSent: codeSent,
-        codeAutoRetrievalTimeout: codeAutoRetrievalTimeout
+        codeAutoRetrievalTimeout: codeAutoRetrievalTimeout,
+
     );
     return loading = true;
     /* setState(() {
