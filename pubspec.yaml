@@ -36,6 +36,15 @@ dependencies:
   firebase_auth:
   firebase_core_platform_interface: ^5.0.0
   fluttertoast:
+  cloud_firestore: ^4.8.0
+  firebase_storage: ^11.2.1
+  qr_flutter: ^4.0.0
+  gallery_picker:
+
+  upi_india: ^3.0.1
+
+  #....Bottombar
+  fluid_bottom_nav_bar: ^1.4.0
 
   http:
 
@@ -44,7 +53,7 @@ dependencies:
   #LOTTIES
   lottie: ^3.1.2
 
-  cloud_firestore:
+
 
 dev_dependencies:
   flutter_test:

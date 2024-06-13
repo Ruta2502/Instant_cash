@@ -1,30 +1,32 @@
-import 'dart:convert';
-import 'dart:html';
 
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/widgets.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
-import 'package:fluttertoast/fluttertoast.dart';
 import 'package:get/get.dart';
-import 'package:http_parser/http_parser.dart';
 import 'package:im_stepper/stepper.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:instant_cash/bottom_bar/bottom_bar_screens.dart';
 import 'package:instant_cash/commanwidget/custom_btn.dart';
 import 'package:instant_cash/commanwidget/custom_toast.dart';
 import 'package:instant_cash/pancard.dart';
 
 import 'package:instant_cash/utils/comman_text.dart';
-import 'package:instant_cash/utils/fontstyle_utils.dart';
 import 'package:instant_cash/view/home/home_screen.dart';
 import 'package:intl/intl.dart';
+import 'package:lottie/lottie.dart';
 
 import '../../commanwidget/custom_text_field.dart';
-
-import '../docment_model.dart';
-import '../payment/payment_screen.dart';
+import 'dart:convert';
+import 'dart:io';
+import 'package:intl/intl.dart';
 import 'package:path/path.dart' as path;
 import 'package:http/http.dart' as http;
+import 'package:http_parser/http_parser.dart';
+import '../../model/docment_model.dart';
+import '../payment/payment_screen.dart';
+
+
 
 
 class FormStepScreen extends StatefulWidget {
@@ -36,111 +38,112 @@ class FormStepScreen extends StatefulWidget {
 
 class _FormStepScreenState extends State<FormStepScreen> {
 
+  int activeStep = 0; // Initial step set to 0.
+  int upperBound =
+      4; // upperBound MUST BE total number of icons minus 1 (4 steps - 1).
+
+  /// Range Slider variables
+  double _value = 5000;
+
   final picker = ImagePicker();
   File? _image;
   late DocumentModel documentModel;
   late String aadarNumber = "";
 
-  // void _settingModalBottomSheet(context) {
-  //   showModalBottomSheet(
-  //       context: context,
-  //       builder: (BuildContext bc) {
-  //         return Container(
-  //           child: Wrap(
-  //             children: <Widget>[
-  //               ListTile(
-  //                   leading: Icon(Icons.camera_alt_outlined),
-  //                   title: Text('Camera'),
-  //                   onTap: () => {
-  //                     Navigator.pop(context),
-  //                     pickGalleryImage(context, "camera")
-  //                   }),
-  //               ListTile(
-  //                 leading: Icon(Icons.folder),
-  //                 title: Text('Gallery'),
-  //                 onTap: () => {
-  //                   Navigator.pop(context),
-  //                   pickGalleryImage(context, "gallery")
-  //                 },
-  //               ),
-  //             ],
-  //           ),
-  //         );
-  //       });
-  // }
+  void _settingModalBottomSheet(context) {
+    showModalBottomSheet(
+        context: context,
+        builder: (BuildContext bc) {
+          return Container(
+            child: new Wrap(
+              children: <Widget>[
+                new ListTile(
+                    leading: new Icon(Icons.camera_alt_outlined),
+                    title: new Text('Camera'),
+                    onTap: () => {
+                      Navigator.pop(context),
+                      pickGalleryImage(context, "camera")
+                    }),
+                new ListTile(
+                  leading: new Icon(Icons.folder),
+                  title: new Text('Gallery'),
+                  onTap: () => {
+                    Navigator.pop(context),
+                    pickGalleryImage(context, "gallery")
+                  },
+                ),
+              ],
+            ),
+          );
+        });
+  }
 
-  // Future pickGalleryImage(BuildContext context, String pickerType) async {
-  //   late XFile pickedFile;
-  //   switch (pickerType) {
-  //     case "gallery":
-  //       pickedFile = (await picker.pickImage(
-  //         source: ImageSource.gallery,
-  //         imageQuality: 50,
-  //       ))!;
-  //       break;
-  //
-  //     case "camera": // CAMERA CAPTURE CODE
-  //       pickedFile = (await picker.pickImage(
-  //           source: ImageSource.camera,
-  //           imageQuality: 50,
-  //           preferredCameraDevice: CameraDevice.rear))!;
-  //       break;
-  //   }
-  //   File imageFile = File(pickedFile.path);
-  //
-  //   setState(() {
-  //     _image = imageFile;
-  //   });
-  // }
+  Future pickGalleryImage(BuildContext context, String pickerType) async {
+    late XFile pickedFile;
+    switch (pickerType) {
+      case "gallery":
+        pickedFile = (await picker.pickImage(
+          source: ImageSource.gallery,
+          imageQuality: 50,
+        ))!;
+        break;
 
-  // aadhar_doc(File? image) async {
-  //   var responseJson;
-  //
-  //   Map<String, String> headers = {
-  //     'Content-type': 'application/json;charset=UTF-8',
-  //     'Accept': 'application/json',
-  //     "Authorization":
-  //     'Bearer eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJmcmVzaCI6ZmFsc2UsImlhdCI6MTcwMDg5NzY3MywianRpIjoiZmRlYTZiMTItNWNlNC00N2YzLTgwMDEtMzlkNjUyNjFjZTVkIiwidHlwZSI6ImFjY2VzcyIsImlkZW50aXR5IjoiZGV2LmNvbnNvbGVfMnllc2tiaXc5ZXp4aXg4YWJqcGl1Mmx6ajF3QHN1cmVwYXNzLmlvIiwibmJmIjoxNzAwODk3NjczLCJleHAiOjIwMTYyNTc2NzMsInVzZXJfY2xhaW1zIjp7InNjb3BlcyI6WyJ3YWxsZXQiXX19.UKz36dsJEh2R6rmswDBeOFi4IOCX6K8JyuwsxRljHv0'
-  //   };
-  //   var url = "https://kyc-api.aadhaarkyc.io/api/v1/ocr/aadhaar";
-  //   var request = http.MultipartRequest("POST", Uri.parse(url));
-  //   request.files.add(await http.MultipartFile.fromPath(
-  //     "file",
-  //     image!.path,
-  //     contentType: MediaType('multipart/form-data', 'multipart/form-data'),
-  //   ));
-  //
-  //   request.headers.addAll(headers);
-  //   var respond = await request.send();
-  //   var response = await http.Response.fromStream(respond);
-  //
-  //   if (response.statusCode == 200) {
-  //     try {
-  //       responseJson = json.decode(response.body.toString());
-  //       Map<String, dynamic> presh = await responseJson;
-  //       documentModel = DocumentModel.fromJson(presh);
-  //       aadarNumber = documentModel.data.ocrFields[0].aadhaarNumber.value;
-  //       _panNumberController.text =
-  //           documentModel.data.ocrFields[0].aadhaarNumber.value;
-  //       _panUserNameController.text =
-  //           documentModel.data.ocrFields[0].fullName.value;
-  //       setState(() {});
-  //     } catch (e) {
-  //       print(e);
-  //       return response.statusCode;
-  //     }
-  //     return response.statusCode;
-  //   }
-  // }
-  int activeStep = 0; // Initial step set to 0.
-  int upperBound =
-      4; // upperBound MUST BE total number of icons minus 1 (4 steps - 1).
+      case "camera": // CAMERA CAPTURE CODE
+        pickedFile = (
 
-  // Range Slider variables
+            await picker.pickImage(
 
-  double _value = 5000;
+            source: ImageSource.camera,
+            imageQuality: 50,
+            preferredCameraDevice: CameraDevice.rear))!;
+        break;
+    }
+    File imageFile = File(pickedFile.path);
 
+    setState(() {
+      _image = imageFile;
+    });
+  }
 
+  aadhar_doc(File? image) async {
+    var responseJson;
+
+    Map<String, String> headers = {
+      'Content-type': 'application/json;charset=UTF-8',
+      'Accept': 'application/json',
+      "Authorization":
+      'Bearer eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJmcmVzaCI6ZmFsc2UsImlhdCI6MTcwMDg5NzY3MywianRpIjoiZmRlYTZiMTItNWNlNC00N2YzLTgwMDEtMzlkNjUyNjFjZTVkIiwidHlwZSI6ImFjY2VzcyIsImlkZW50aXR5IjoiZGV2LmNvbnNvbGVfMnllc2tiaXc5ZXp4aXg4YWJqcGl1Mmx6ajF3QHN1cmVwYXNzLmlvIiwibmJmIjoxNzAwODk3NjczLCJleHAiOjIwMTYyNTc2NzMsInVzZXJfY2xhaW1zIjp7InNjb3BlcyI6WyJ3YWxsZXQiXX19.UKz36dsJEh2R6rmswDBeOFi4IOCX6K8JyuwsxRljHv0'
+    };
+    var url = "https://kyc-api.aadhaarkyc.io/api/v1/ocr/aadhaar";
+    var request = new http.MultipartRequest("POST", Uri.parse(url));
+    request.files.add(await http.MultipartFile.fromPath(
+      "file",
+      image!.path,
+      contentType: MediaType('multipart/form-data', 'multipart/form-data'),
+    ));
+
+    request.headers.addAll(headers);
+    var respond = await request.send();
+    var response = await http.Response.fromStream(respond);
+
+    if (response.statusCode == 200) {
+      try {
+        responseJson = json.decode(response.body.toString());
+        Map<String, dynamic> presh = await responseJson;
+        documentModel = DocumentModel.fromJson(presh);
+        aadarNumber = documentModel.data.ocrFields[0].aadhaarNumber.value;
+        _panNumberController.text =
+            documentModel.data.ocrFields[0].aadhaarNumber.value;
+        _panUserNameController.text =
+            documentModel.data.ocrFields[0].fullName.value;
+        setState(() {});
+      } catch (e) {
+        print(e);
+        return response.statusCode;
+      }
+      return response.statusCode;
+    }
+  }
 
   ///Gender Detail Variable
   String selectedGender = 'Select Gender';
@@ -160,11 +163,11 @@ class _FormStepScreenState extends State<FormStepScreen> {
       context: context,
       builder: (_) => Container(
         height: MediaQuery.of(context).size.height * 0.3,
-        color: Color.fromARGB(255, 255, 255, 255),
+        color: const Color.fromARGB(255, 255, 255, 255),
         child: Column(
           children: [
             Container(
-              padding: EdgeInsets.symmetric(vertical: 10),
+              padding: const EdgeInsets.symmetric(vertical: 10),
               height: Get.height*0.3,
               child: CupertinoDatePicker(
 
@@ -187,15 +190,14 @@ class _FormStepScreenState extends State<FormStepScreen> {
   }
 
   // PAN Card Detail variables
-  TextEditingController _panUserNameController = TextEditingController();
-  TextEditingController _panNumberController = TextEditingController();
+  final TextEditingController _panUserNameController = TextEditingController();
+  final TextEditingController _panNumberController = TextEditingController();
 
   // Bank Detail variables
-  TextEditingController _bankNameController = TextEditingController();
-  TextEditingController _accountNumberController = TextEditingController();
-  TextEditingController _ifscNumberController = TextEditingController();
+  final TextEditingController _bankNameController = TextEditingController();
+  final TextEditingController _accountNumberController = TextEditingController();
+  final TextEditingController _ifscNumberController = TextEditingController();
 
-  final GlobalKey<FormState> _formKey = GlobalKey<FormState>();
 
   // Validation method
   bool _validateCurrentStep() {
@@ -208,7 +210,8 @@ class _FormStepScreenState extends State<FormStepScreen> {
             selectSalary != 'Select Salary' &&
             selectResident != 'Select Residence';
       case 2: // PAN Card Detail Step
-        return _panUserNameController.text.isNotEmpty &&
+        return _image != null &&
+            _panUserNameController.text.isNotEmpty &&
             _panNumberController.text.isNotEmpty && _formattedDate != 'Select D.O.B' &&
             selectedGender != 'Select Gender';
       case 3: // Bank Detail Step
@@ -220,192 +223,225 @@ class _FormStepScreenState extends State<FormStepScreen> {
     }
   }
 
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: Column(
-        children: [
-          Container(
-            height: 185.h,
-            // width: MediaQuery.of(context).size.width,
-            color: Colors.teal,
-            child: SafeArea(
-              child: Column(
-                children: [
-                  Padding(
-                    padding:
-                        const EdgeInsets.symmetric(horizontal: 18, vertical: 5),
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        GestureDetector(
-                            onTap: () {
-                              Get.to(()=> HomeScreen());
-                            },
-                            child: Icon(Icons.arrow_back_ios,
-                                color: Colors.white, size: 24)),
-                        CustomText(
-                          'Cash Assist',
-                          fontSize: 20.sp,
-                          color: Colors.white,
-                          fontWeight: FontWeight.w500,
-                        ),
-                        Icon(Icons.logout, color: Colors.teal, size: 29),
-                      ],
-                    ),
-                  ),
-                  SizedBox(
-                    height: 14.h,
-                  ),
-                  IconStepper(
-                    // stepColor: Colors.yellow,
-                    stepRadius: 19,
-                    activeStepColor: Colors.white,
-                    icons: [
-                      Icon(
-                        Icons.linear_scale,
-                        color: Colors.teal,
-                      ),
-                      Icon(
-                        Icons.school,
-                        color: Colors.teal,
-                      ),
-                      Icon(
-                        Icons.credit_card,
-                        color: Colors.teal,
-                      ),
-                      Icon(
-                        Icons.account_balance,
-                        color: Colors.teal,
-                      ),
-                    ],
 
-                    activeStep: activeStep,
-                    stepColor: Colors.teal.shade100,
-                    lineColor: Colors.white,
-                    activeStepBorderColor: Colors.white,
-                    enableNextPreviousButtons: false,
-                    lineLength: 42,
-                    // stepReachedAnimationEffect: Curves.easeOut,
-                    enableStepTapping: false,
+      appBar: AppBar(
+        elevation: 0.0,
+        backgroundColor: Colors.teal,
+        leading:   GestureDetector(
+            onTap: () {
+              Get.to(()=> const BottomBarScreen());
+            },
+            child: const Icon(Icons.arrow_back_ios,
+                color: Colors.white, size: 24)),
+        title:  CustomText(
+          'Cash Assist',
+          fontSize: 20.sp,
+          color: Colors.white,
+          fontWeight: FontWeight.w500,
+        ),
+        centerTitle: true,
 
-                    onStepReached: (index) {
-                      setState(() {
-                        activeStep = index;
-                      });
-                    },
+        actions: [
+          const Icon(Icons.logout, color: Colors.teal, size: 29),
+        ],
+      ),
+      body: SingleChildScrollView(
+        child: Column(
+          children: [
+
+            Container(
+              height: 90.h,
+              // width: MediaQuery.of(context).size.width,
+              color: Colors.teal,
+              child: IconStepper(
+                // stepColor: Colors.yellow,
+                stepRadius: 19,
+                activeStepColor: Colors.white,
+                icons: const [
+                  Icon(
+                    Icons.linear_scale,
+                    color: Colors.teal,
+                  ),
+                  Icon(
+                    Icons.school,
+                    color: Colors.teal,
+                  ),
+                  Icon(
+                    Icons.credit_card,
+                    color: Colors.teal,
+                  ),
+                  Icon(
+                    Icons.account_balance,
+                    color: Colors.teal,
                   ),
                 ],
+
+                activeStep: activeStep,
+                stepColor: Colors.teal.shade100,
+                lineColor: Colors.white,
+                activeStepBorderColor: Colors.white,
+                enableNextPreviousButtons: false,
+                lineLength: 42,
+                // stepReachedAnimationEffect: Curves.easeOut,
+                enableStepTapping: false,
+
+                onStepReached: (index) {
+                  setState(() {
+                    activeStep = index;
+                  });
+                },
               ),
             ),
-          ),
-          Expanded(
-            child: stepContent(),
-          ),
-          // Padding(
-          //   padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 15),
-          //   child: Row(
-          //     mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          //     children: [
-          //       // previousButton(),
-          //       nextButton(),
-          //     ],
-          //   ),
-          // ),
-          nextBtn(),
-          SizedBox(height: 5.h
-            ,),
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 10,vertical: 10),
-            child: Row(
+            Column(
               children: [
-                Padding(
-                  padding: const EdgeInsets.only(bottom: 10),
-                  child: Icon(Icons.security,color: Colors.green,size: 16,),
-                ),
-                SizedBox(width: 5.w
+                stepContent(),
+                SizedBox(height: 30.h,),
+                nextBtn(),
+                SizedBox(height: 5.h
                   ,),
-                CustomText("The platform is committed to protecting the \nsecurity of the applicant's data",
-                color: Colors.grey,
-                  fontSize: 11.sp,
-                  fontWeight: FontWeight.w600,
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 10,vertical: 10),
+                  child: Row(
+                    children: [
+                      const Padding(
+                        padding: EdgeInsets.only(bottom: 10),
+                        child: Icon(Icons.security,color: Colors.green,size: 16,),
+                      ),
+                      SizedBox(width: 5.w
+                        ,),
+                      CustomText("The platform is committed to protecting the \nsecurity of the applicant's data",
+                        color: Colors.grey,
+                        fontSize: 11.sp,
+                        fontWeight: FontWeight.w600,
 
+                      ),
+                    ],
+                  ),
                 ),
+
               ],
             ),
-          ),
-          // nextButton()
-        ],
+            // Padding(
+            //   padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 15),
+            //   child: Row(
+            //     mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            //     children: [
+            //       // previousButton(),
+            //       nextButton(),
+            //     ],
+            //   ),
+            // ),
+            // nextBtn(),
+            // SizedBox(height: 5.h
+            //   ,),
+            // Padding(
+            //   padding: const EdgeInsets.symmetric(horizontal: 10,vertical: 10),
+            //   child: Row(
+            //     children: [
+            //       const Padding(
+            //         padding: EdgeInsets.only(bottom: 10),
+            //         child: Icon(Icons.security,color: Colors.green,size: 16,),
+            //       ),
+            //       SizedBox(width: 5.w
+            //         ,),
+            //       CustomText("The platform is committed to protecting the \nsecurity of the applicant's data",
+            //       color: Colors.grey,
+            //         fontSize: 11.sp,
+            //         fontWeight: FontWeight.w600,
+            //
+            //       ),
+            //     ],
+            //   ),
+            // ),
+            // nextButton()
+          ],
+        ),
       ),
     );
   }
 
   /// Returns the next button.
-  Widget nextButton() {
-    return Container(
-      height: MediaQuery.of(context).size.height * 0.05,
-      width: MediaQuery.of(context).size.width / 5,
-      child: ElevatedButton(
-        style: ElevatedButton.styleFrom(
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(12),
-          ),
-          backgroundColor: Colors.teal,
-        ),
-        onPressed: () {
-          if (_validateCurrentStep()) {
-            if (activeStep < upperBound) {
-              setState(() {
-                activeStep++;
-              });
-            } else {
-              // Perform your final action here when "Continue" is pressed
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(content: Text('Form submitted successfully.')),
-              );
-              Navigator.of(context).pushReplacement(
-                MaterialPageRoute(builder: (_) => PaymentScreen()),
-              );
-            }
-          } else {
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(
-                  content: Text(
-                      'Please complete the current step before proceeding.')),
-            );
-          }
-        },
-        child: CustomText(
-          upperBound == 4 ? 'Continue' : 'Next',
-          fontWeight: FontWeight.w500,
-          fontSize: upperBound == 4 ? 15 : 18,
-          color: Colors.white,
-        ),
-      ),
-    );
-  }
+  // Widget nextButton() {
+  //   return SizedBox(
+  //     height: MediaQuery.of(context).size.height * 0.05,
+  //     width: MediaQuery.of(context).size.width / 5,
+  //     child: ElevatedButton(
+  //       style: ElevatedButton.styleFrom(
+  //         shape: RoundedRectangleBorder(
+  //           borderRadius: BorderRadius.circular(12),
+  //         ),
+  //         backgroundColor: Colors.teal,
+  //       ),
+  //       onPressed: () {
+  //         if (_validateCurrentStep()) {
+  //           if (activeStep < upperBound) {
+  //             setState(() {
+  //               activeStep++;
+  //             });
+  //           } else {
+  //             // Perform your final action here when "Continue" is pressed
+  //             ScaffoldMessenger.of(context).showSnackBar(
+  //               const SnackBar(content: Text('Form submitted successfully.')),
+  //             );
+  //             Navigator.of(context).pushReplacement(
+  //               MaterialPageRoute(builder: (_) =>  PaymentScreen()),
+  //             );
+  //           }
+  //         } else {
+  //           ScaffoldMessenger.of(context).showSnackBar(
+  //             const SnackBar(
+  //                 content: Text(
+  //                     'Please complete the current step before proceeding.')),
+  //           );
+  //         }
+  //       },
+  //       child: CustomText(
+  //         upperBound == 4 ? 'Continue' : 'Next',
+  //         fontWeight: FontWeight.w500,
+  //         fontSize: upperBound == 4 ? 15 : 18,
+  //         color: Colors.white,
+  //       ),
+  //     ),
+  //   );
+  // }
   Widget nextBtn() {
+    // bool isBankDetailStepValid = _bankNameController.text.isNotEmpty &&
+    //     _accountNumberController.text.isNotEmpty &&
+    //     _ifscNumberController.text.isNotEmpty;
     return Custombutton(
-         height: Get.height *0.06,
-        width: Get.width /1.1,
-        onTap: (){
-          if (_validateCurrentStep()) {
-            if (activeStep < upperBound) {
-              setState(() {
-                activeStep++;
-              });
-            } else {
-
-              ToastUtils.showCustomToast(context: context, title: 'Form submitted successfully.',fontWeight: FontWeight.w700,fontSize: 11.sp);
-            Get.to(()=> PaymentScreen());
-            }
+      height: Get.height * 0.06,
+      width: Get.width / 1.1,
+      onTap: () {
+        if (_validateCurrentStep()) {
+          if (activeStep < upperBound) {
+            setState(() {
+              activeStep++;
+            });
           } else {
-
-            ToastUtils.showCustomToast(context: context, title: 'Please complete the current step before proceeding.',fontWeight: FontWeight.w700,fontSize: 11.sp,);
+            // Change button text to 'Continue' and go to PaymentScreen
+            ToastUtils.showCustomToast(
+              context: context,
+              title: 'Form submitted successfully.',
+              fontWeight: FontWeight.w700,
+              fontSize: 11.sp,
+            );
+            Get.to(() =>  PaymentScreen(amount: _value,));
           }
-        },
-      title:  activeStep == upperBound ? 'Continue':'Next Step',
-    fontSize: 15.sp,
+        } else {
+          ToastUtils.showCustomToast(
+            context: context,
+            title: 'Please complete the current step before proceeding.',
+            fontWeight: FontWeight.w700,
+            fontSize: 11.sp,
+          );
+        }
+      },
+      title: 'Next Step',
+      fontSize: 15.sp,
     );
   }
   //
@@ -455,43 +491,230 @@ class _FormStepScreenState extends State<FormStepScreen> {
 
   // Content for Range Slider step
   Widget rangeSliderStep() {
-    return Column(
-      mainAxisAlignment: MainAxisAlignment.center,
-      children: [
-        Slider(
-          activeColor: Colors.teal,
-          inactiveColor: Colors.tealAccent,
-          value: _value,
-          min: 5000,
-          max: 300000,
-          divisions: ((300000 - 5000) / 5000).toInt(),
-          onChanged: (double value) {
-            setState(() {
-              _value = value.roundToDouble();
-            });
-          },
-          label: '${_value.toInt()}',
+    return SingleChildScrollView(
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 16,vertical: 12),
+        child: Column(
+          // mainAxisAlignment: MainAxisAlignment.center,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            SizedBox(height: 12.h,),
+            Container(
+              height: Get.height/4.5,
+              width: Get.width /1,
 
+              decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    begin: Alignment.topCenter,
+                    end: Alignment.bottomCenter,
+                    colors: [
+                      Colors.tealAccent.shade400,
+                      Colors.teal,
+                    ],
+                  ),
+                  borderRadius: BorderRadius.circular(15)
+              ),
+              child: Padding(
+                padding: const EdgeInsets.symmetric(vertical: 15),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  crossAxisAlignment: CrossAxisAlignment.center,
+                  children: [
+                         Padding(
+                           padding: const EdgeInsets.only(left: 10,),
+                           child: Column(
+                           crossAxisAlignment: CrossAxisAlignment.start,
+                             children: [
+                               SizedBox(
+                                 height: 5.h,
+                               ),
+                 CustomText('Get money, Instantly',
+                 fontWeight: FontWeight.w600,
+                   fontSize: 14.sp,
+                   color: Colors.white,
+
+                 ),
+                 SizedBox(
+                   height: 28.h,
+                 ),
+                 CustomText('Loanable Amount',
+                   fontWeight: FontWeight.w500,
+                   fontSize: 12.sp,
+                   color: Colors.white,
+
+                 ),
+                 // SizedBox(
+                 //   height: 5.h,
+                 // ),
+                 CustomText('₹ 3,00,000',
+                   fontWeight: FontWeight.w600,
+                   fontSize: 22.sp,
+                   color: Colors.white,
+
+                 ),
+                             ],
+                           ),
+                         ),
+                    Container(
+                      height: 120.h,
+                      width: 140.w,
+                      // color: Colors.red,
+                      decoration: BoxDecoration(
+                        color: Colors.transparent,
+                        image: DecorationImage(image: AssetImage('assets/image/loanProcess.png'),fit: BoxFit.cover)
+                      ),
+                    ),
+                    // Image.asset('assets/image/loanProcess.png',scale: 5.4),
+
+                  ],
+                ),
+              ),
+
+            ),
+            SizedBox(height: 30.h,),
+            Container(
+              alignment: Alignment.center,
+              height: 350.h,
+              width: Get.width,
+      
+              decoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(15),
+                color: Colors.grey.withOpacity(0.3),
+                border: Border.all(color: Colors.teal,width: 1.8)
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  SizedBox(height: 5.h,),
+                  Padding(
+                    padding: const EdgeInsets.only(left: 10,top: 10),
+                    child: CustomText('Set  Amount', fontSize: 14.sp,fontWeight: FontWeight.w600,),
+                  ),
+      
+                  SliderTheme(
+                    data: SliderTheme.of(context).copyWith(
+                      trackHeight: 8.0,
+      
+                      thumbShape: RoundSliderThumbShape(enabledThumbRadius: 10.0), // Increase the thumb size
+                      overlayShape: RoundSliderOverlayShape(overlayRadius: 18.0), // Increase the overlay size
+                    ),
+                    child: Slider(
+      
+                      activeColor: Colors.teal,
+                      inactiveColor: Colors.teal.shade200,
+                      value: _value,
+                      min: 5000,
+                      max: 300000,
+                      divisions: ((300000 - 5000) / 5000).toInt(),
+                      onChanged: (double value) {
+                        setState(() {
+                          _value = value.roundToDouble();
+                        });
+                      },
+                      label: '${_value.toInt()}',
+                    ),
+                  ),
+
+                  SizedBox(height: 30.h,),
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 20),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                      children: [
+                        Container(
+                          height: 180.h,
+                          width: 140.w,
+                          decoration: BoxDecoration(
+                              color: Colors.teal.withOpacity(0.2),
+                              borderRadius: BorderRadius.circular(15),
+                              border: Border.all(color: Colors.teal,width: 1.5)
+                          ),
+                          child: Column(
+                            children: [
+                              SizedBox(
+                                height: 10.h,
+                              ),
+                              CustomText('Loan Amount',
+                                fontWeight: FontWeight.w600,
+                                fontSize: 13.sp,
+                              ),
+                              SizedBox(
+                                height: 15.h,
+                              ),
+                              CustomText('Rs.${_value.toInt()}',
+                                fontWeight: FontWeight.w500,
+                                fontSize: 14.sp,
+                              ),
+                              SizedBox(
+                                height: 5.h,
+                              ),
+                              Container(
+                                height: 80.h,
+                                width: 110.h,
+                                decoration: BoxDecoration(
+                                  color: Colors.transparent,
+                                  image: DecorationImage(image: AssetImage('assets/image/loan_icon.png'), fit: BoxFit.cover),
+                                ),
+                              ),
+
+                            ],
+                          ),
+                        ) ,
+                        Spacer(),
+                        Container(
+                          height: 180.h,
+                          width: 140.w,
+                         decoration: BoxDecoration(
+                           color: Colors.teal.withOpacity(0.2),
+                           borderRadius: BorderRadius.circular(15),
+                           border: Border.all(color: Colors.teal,width: 1.5)
+                         ),
+                          child:  Column(
+                            children: [
+                              SizedBox(
+                                height: 10.h,
+                              ),
+                              CustomText('Interest Rate',
+                                fontWeight: FontWeight.w600,
+                                fontSize: 13.sp,
+                              ),
+                              SizedBox(
+                                height: 10.h,
+                              ),
+                              CustomText('1.99 %\n Per Annul',
+                                fontWeight: FontWeight.w500,
+                                fontSize: 14.sp,
+                                textAlign: TextAlign.center,
+                              ),
+                              SizedBox(
+                                height: 5.h,
+                              ),
+                              Container(
+                                height: 60.h,
+                                width: 110.h,
+                                decoration: BoxDecoration(
+                                  color: Colors.transparent,
+                                  image: DecorationImage(image: AssetImage('assets/image/interest_rate.png'), fit: BoxFit.fill),
+                                ),
+                              ),
+
+                            ],
+                          ),
+                        ),
+
+                      ],
+                    ),
+                  ),
+      
+                ],
+              ),
+            ),
+      
+      
+
+          ],
         ),
-        SizedBox(
-          height: 20.h
-          ,
-        ),
-        CustomText(
-          'Amount :- Rs.${_value.toInt()}',
-          fontWeight: FontWeight.w600,
-          fontSize: 18.sp,
-        ),
-        SizedBox(
-          height: 20.h
-          ,
-        ),
-        CustomText(
-          'Interest rate :- 1.99 % Per Annum',
-          fontWeight: FontWeight.w600,
-          fontSize: 16.sp,
-        )
-      ],
+      ),
     );
   }
 
@@ -569,7 +792,7 @@ class _FormStepScreenState extends State<FormStepScreen> {
                                   selectOccupation = newValue1!;
                                 });
                               },
-                              icon: Icon(Icons.arrow_drop_down_outlined,
+                              icon: const Icon(Icons.arrow_drop_down_outlined,
                                   size: 30, color: Colors.grey),
                             ),
                           ),
@@ -637,7 +860,7 @@ class _FormStepScreenState extends State<FormStepScreen> {
                                   selectEducation = newValue2!;
                                 });
                               },
-                              icon: Icon(Icons.arrow_drop_down_outlined,
+                              icon: const Icon(Icons.arrow_drop_down_outlined,
                                   size: 30, color: Colors.grey),
                             ),
                           ),
@@ -706,7 +929,7 @@ class _FormStepScreenState extends State<FormStepScreen> {
                                   selectSalary = newValue3!;
                                 });
                               },
-                              icon: Icon(Icons.arrow_drop_down_outlined,
+                              icon: const Icon(Icons.arrow_drop_down_outlined,
                                   size: 30, color: Colors.grey),
                             ),
                           ),
@@ -773,7 +996,7 @@ class _FormStepScreenState extends State<FormStepScreen> {
                                   selectResident = newValue4!;
                                 });
                               },
-                              icon: Icon(Icons.arrow_drop_down_outlined,
+                              icon: const Icon(Icons.arrow_drop_down_outlined,
                                   size: 30, color: Colors.grey),
                             ),
                           ),
@@ -807,40 +1030,40 @@ class _FormStepScreenState extends State<FormStepScreen> {
             SizedBox(height: 20.h,),
             GestureDetector(
               onTap: () {
-
+                _settingModalBottomSheet(context);
               },
-              child: Card(
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12)
-                ),
-                child: Container(
-                  height: MediaQuery.of(context).size.height / 4,
-                  width: MediaQuery.of(context).size.width,
-                  decoration: BoxDecoration(
-                      image: DecorationImage(
-                          image: AssetImage('assets/image/card.png'),
-                          fit: BoxFit.cover),
-                      // color: Colors.grey,
-                      borderRadius: BorderRadius.circular(12),
-                      border: Border.all(color: Colors.grey, width: 2)),
-                  child: GestureDetector(
-                    onTap: (){
-                      // Get.to(()=> PancardScreen());
-                    },
-                    child: Center(
-                      child: CircleAvatar(
-                        radius: 25,
-                        backgroundColor: Colors.grey,
-                        child: Icon(
-                          Icons.camera_alt_rounded,
-                          color: Colors.white,
-                          size: 28,
-                        ),
-                      ),
+              child: Container(
+                height: MediaQuery.of(context).size.height / 4,
+                width: MediaQuery.of(context).size.width,
+                decoration: BoxDecoration(
+                    image: const DecorationImage(
+                        image: AssetImage('assets/image/card.png'),
+                        fit: BoxFit.cover),
+                    // color: Colors.grey,
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(color: Colors.grey, width: 1.1)),
+                child: _image == null
+                    ? Center(
+                  child: CircleAvatar(
+                    radius: 25,
+                    backgroundColor: Colors.grey,
+                    child: Icon(
+                      Icons.camera_alt_rounded,
+                      color: Colors.white,
+                      size: 28,
                     ),
-                  )
+                  ),
+                )
+                    : Container(
+                    height: MediaQuery.of(context).size.height / 4.1,
+                    width: MediaQuery.of(context).size.width,
+                    decoration: BoxDecoration(
+                      borderRadius: BorderRadius.circular(12),
+                      color: Colors.grey,
+                      image: DecorationImage(image: FileImage( _image!),fit: BoxFit.cover)
+                    ),
+                    ),
 
-                ),
               ),
             ),
             SizedBox(
@@ -908,7 +1131,7 @@ class _FormStepScreenState extends State<FormStepScreen> {
                         fontWeight: FontWeight.w400,
 
                       ),
-                      Icon(
+                      const Icon(
                         Icons.arrow_drop_down_outlined,
                         size: 30,
                         color: Colors.grey,
@@ -976,7 +1199,7 @@ class _FormStepScreenState extends State<FormStepScreen> {
                                   selectedGender = newValue!;
                                 });
                               },
-                              icon: Icon(Icons.arrow_drop_down_outlined,
+                              icon: const Icon(Icons.arrow_drop_down_outlined,
                                   size: 30, color: Colors.grey),
                             ),
                           ),

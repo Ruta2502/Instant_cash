@@ -1,13 +1,20 @@
 import 'dart:convert';
 import 'dart:io';
 
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_screenutil/flutter_screenutil.dart';
+import 'package:get/get.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:instant_cash/utils/comman_text.dart';
 
-import 'package:instant_cash/view/docment_model.dart';
+import 'package:intl/intl.dart';
 import 'package:path/path.dart' as path;
 import 'package:http/http.dart' as http;
 import 'package:http_parser/http_parser.dart';
+
+import 'commanwidget/custom_text_field.dart';
+import 'model/docment_model.dart';
 
 class PancardScreen extends StatefulWidget {
   const PancardScreen({super.key});
@@ -101,7 +108,7 @@ class _PancardScreenState extends State<PancardScreen> {
         Map<String, dynamic> presh = await responseJson;
         documentModel = DocumentModel.fromJson(presh);
         aadarNumber = documentModel.data.ocrFields[0].aadhaarNumber.value;
-        _panUserNumberController.text =
+        _panNumberController.text =
             documentModel.data.ocrFields[0].aadhaarNumber.value;
         _panUserNameController.text =
             documentModel.data.ocrFields[0].fullName.value;
@@ -114,36 +121,77 @@ class _PancardScreenState extends State<PancardScreen> {
     }
   }
 
-  TextEditingController _panUserNameController = TextEditingController();
-  TextEditingController _panUserNumberController = TextEditingController();
+
+  ///Gender Detail Variable
+  String selectedGender = 'Select Gender';
+
+
+
+  ///Date detail Variable
+  DateTime _selectedDate = DateTime.now();
+  String _formattedDate = 'Select D.O.B';
+
+  void _showDatePicker() {
+    showCupertinoModalPopup(
+      context: context,
+      builder: (_) => Container(
+        height: MediaQuery.of(context).size.height * 0.3,
+        color: const Color.fromARGB(255, 255, 255, 255),
+        child: Column(
+          children: [
+            Container(
+              padding: const EdgeInsets.symmetric(vertical: 10),
+              height: Get.height*0.3,
+              child: CupertinoDatePicker(
+
+                initialDateTime: _selectedDate,
+                onDateTimeChanged: (DateTime newDate) {
+                  setState(() {
+                    _selectedDate = newDate;
+                    _formattedDate = DateFormat.yMMMd().format(newDate);
+                  });
+                },
+                mode: CupertinoDatePickerMode.date,
+
+              ),
+            ),
+
+          ],
+        ),
+      ),
+    );
+  }
+
+  // PAN Card Detail variables
+  final TextEditingController _panUserNameController = TextEditingController();
+  final TextEditingController _panNumberController = TextEditingController();
+
+
+
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       body: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+        padding: const EdgeInsets.symmetric(horizontal: 15, vertical: 10),
         child: SingleChildScrollView(
           child: Column(
             mainAxisAlignment: MainAxisAlignment.start,
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              SizedBox(
-                height: 10,
-              ),
-              Text(
-                'Pan Photo', /*fontSize: 18,fontWeight: FontWeight.w500,*/
+              CustomText(
+                'Pan Photo',
+                fontSize: 20.sp,
+                fontWeight: FontWeight.w600,
               ),
 
-              Card(
-                  child: SizedBox(
-                height: 10,
-              )),
+              SizedBox(height: 20.h,),
               GestureDetector(
                 onTap: () {
                   _settingModalBottomSheet(context);
                 },
                 child: Container(
-                  height: MediaQuery.of(context).size.height / 3.8,
+                  height: MediaQuery.of(context).size.height / 4,
                   width: MediaQuery.of(context).size.width,
                   decoration: BoxDecoration(
                       image: DecorationImage(
@@ -168,45 +216,52 @@ class _PancardScreenState extends State<PancardScreen> {
                 ),
               ),
               SizedBox(
-                height: 25,
+                height: 25.h
+                ,
               ),
 
-              Text(
-                'Full Name', /*fontSize: 16,fontWeight: FontWeight.w500,color: Colors.grey,*/
+              CustomText(
+                'Full Name',
+                fontSize: 16.sp,
+                fontWeight: FontWeight.w500,
+                color: Colors.grey,
+              ),
+
+              CommonTextField(
+                textEditController: _panUserNameController,
+
+              ),
+
+              SizedBox(height: 10.h),
+
+              CustomText(
+                'Pan No.',
+                fontSize: 16.sp,
+                fontWeight: FontWeight.w500,
+                color: Colors.grey,
+              ),
+
+              CommonTextField(
+                textEditController: _panNumberController,
+                textInputType: TextInputType.number,
+              ),
+
+              SizedBox(
+                height: 8.h,
+              ),
+              CustomText(
+                'Date of Birth',
+                fontSize: 16.sp,
+                fontWeight: FontWeight.w500,
+                color: Colors.grey,
               ),
               SizedBox(
-                height: 10,
-              ),
-              TextField(
-                controller: _panUserNameController,
-                // textEditController: _panUserNameController,
-              ),
-
-              SizedBox(height: 10),
-
-              Text(
-                'Pan No.', /*fontSize: 16,fontWeight: FontWeight.w500,color: Colors.grey,*/
-              ),
-              SizedBox(
-                height: 10,
-              ),
-              TextField(
-                controller: _panUserNumberController,
-                // textEditController: _panNumberController,
-                // textInputType: TextInputType.number,
-              ),
-
-              SizedBox(height: 10),
-              Text(
-                'Date of Birth', /*fontSize: 16,fontWeight: FontWeight.w500,color: Colors.grey,*/
-              ),
-              SizedBox(
-                height: 10,
+                height: 5.h,
               ),
 
               ///Date of Birth
               GestureDetector(
-                onTap: () {},
+                onTap: _showDatePicker,
                 child: Container(
                   height: MediaQuery.of(context).size.height * 0.06,
                   width: MediaQuery.of(context).size.width,
@@ -218,12 +273,16 @@ class _PancardScreenState extends State<PancardScreen> {
                     child: Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
-                        Text(
-                          'Select D.O.B', /*fontSize: 18,fontWeight: FontWeight.w400,*/
+                        CustomText(
+
+                          _formattedDate,
+                          fontSize: 14.sp,
+                          fontWeight: FontWeight.w400,
+
                         ),
-                        Icon(
+                        const Icon(
                           Icons.arrow_drop_down_outlined,
-                          size: 40,
+                          size: 30,
                           color: Colors.grey,
                         ),
                       ],
@@ -232,13 +291,16 @@ class _PancardScreenState extends State<PancardScreen> {
                 ),
               ),
               SizedBox(
-                height: 10,
+                height: 15.h,
               ),
-              Text(
-                'Gender', /*fontSize: 16,fontWeight: FontWeight.w500,color: Colors.grey,*/
+              CustomText(
+                'Gender',
+                fontSize: 16.sp,
+                fontWeight: FontWeight.w500,
+                color: Colors.grey,
               ),
               SizedBox(
-                height: 10,
+                height: 5.h,
               ),
 
               ///Gender
@@ -255,43 +317,146 @@ class _PancardScreenState extends State<PancardScreen> {
                     child: Row(
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
-                          /* Expanded(
-                          child: DropdownButtonHideUnderline(
-                            child: DropdownButton<String>(
-                              value: selectedGender == 'Select Gender' ? null : selectedGender,
-                              hint: Text(
-                                selectedGender,
-                                color: Colors.grey,
-                                fontSize: 15,
-                                fontWeight: FontWeight.w400,
+                          Expanded(
+                            child: DropdownButtonHideUnderline(
+                              child: DropdownButton<String>(
+                                value: selectedGender == 'Select Gender'
+                                    ? null
+                                    : selectedGender,
+                                hint: CustomText(
+                                  selectedGender,
+                                  color: Colors.grey,
+                                  fontSize: 14.sp,
+                                  fontWeight: FontWeight.w400,
+                                ),
+                                items: <String>[
+                                  'Male',
+                                  'Female',
+                                  'Other'
+                                ].map<DropdownMenuItem<String>>((String value) {
+                                  return DropdownMenuItem<String>(
+                                    value: value,
+                                    child: CustomText(
+                                      value,
+                                      fontSize: 16.sp,
+                                      fontWeight: FontWeight.w400,
+                                    ),
+                                  );
+                                }).toList(),
+                                onChanged: (String? newValue) {
+                                  setState(() {
+                                    selectedGender = newValue!;
+                                  });
+                                },
+                                icon: const Icon(Icons.arrow_drop_down_outlined,
+                                    size: 30, color: Colors.grey),
                               ),
-                              items: <String>['Male', 'Female', 'Other']
-                                  .map<DropdownMenuItem<String>>((String value) {
-                                return DropdownMenuItem<String>(
-                                  value: value,
-                                  child: Text(value,*/ /*fontSize: 18,fontWeight: FontWeight.w400,*/ /*),
-                                );
-                              }).toList(),
-                              onChanged: (String? newValue) {
-                                setState(() {
-                                 // selectedGender = newValue!;
-                                });
-                              },
-                              icon: Icon(Icons.arrow_drop_down_outlined, size: 40, color: Colors.grey),
                             ),
                           ),
-                        ),*/
                         ]),
                   ),
                 ),
               ),
               SizedBox(
-                height: 10,
+                height: 20.h,
               ),
+              // SizedBox(height: 10),
+              // Text(
+              //   'Date of Birth', /*fontSize: 16,fontWeight: FontWeight.w500,color: Colors.grey,*/
+              // ),
+              // SizedBox(
+              //   height: 10,
+              // ),
+              //
+              // ///Date of Birth
+              // GestureDetector(
+              //   onTap: () {},
+              //   child: Container(
+              //     height: MediaQuery.of(context).size.height * 0.06,
+              //     width: MediaQuery.of(context).size.width,
+              //     decoration: BoxDecoration(
+              //         borderRadius: BorderRadius.circular(10),
+              //         border: Border.all(color: Colors.grey, width: 1.5)),
+              //     child: Padding(
+              //       padding: const EdgeInsets.only(right: 6, left: 8),
+              //       child: Row(
+              //         mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              //         children: [
+              //           Text(
+              //             'Select D.O.B', /*fontSize: 18,fontWeight: FontWeight.w400,*/
+              //           ),
+              //           Icon(
+              //             Icons.arrow_drop_down_outlined,
+              //             size: 40,
+              //             color: Colors.grey,
+              //           ),
+              //         ],
+              //       ),
+              //     ),
+              //   ),
+              // ),
+              // SizedBox(
+              //   height: 10,
+              // ),
+              // Text(
+              //   'Gender', /*fontSize: 16,fontWeight: FontWeight.w500,color: Colors.grey,*/
+              // ),
+              // SizedBox(
+              //   height: 10,
+              // ),
+
+              // ///Gender
+              // GestureDetector(
+              //   onTap: () {},
+              //   child: Container(
+              //     height: MediaQuery.of(context).size.height * 0.06,
+              //     width: MediaQuery.of(context).size.width,
+              //     decoration: BoxDecoration(
+              //         borderRadius: BorderRadius.circular(10),
+              //         border: Border.all(color: Colors.grey, width: 1.5)),
+              //     child: Padding(
+              //       padding: const EdgeInsets.only(right: 6, left: 8),
+              //       child: Row(
+              //           mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              //           children: [
+              //             /* Expanded(
+              //             child: DropdownButtonHideUnderline(
+              //               child: DropdownButton<String>(
+              //                 value: selectedGender == 'Select Gender' ? null : selectedGender,
+              //                 hint: Text(
+              //                   selectedGender,
+              //                   color: Colors.grey,
+              //                   fontSize: 15,
+              //                   fontWeight: FontWeight.w400,
+              //                 ),
+              //                 items: <String>['Male', 'Female', 'Other']
+              //                     .map<DropdownMenuItem<String>>((String value) {
+              //                   return DropdownMenuItem<String>(
+              //                     value: value,
+              //                     child: Text(value,*/ /*fontSize: 18,fontWeight: FontWeight.w400,*/ /*),
+              //                   );
+              //                 }).toList(),
+              //                 onChanged: (String? newValue) {
+              //                   setState(() {
+              //                    // selectedGender = newValue!;
+              //                   });
+              //                 },
+              //                 icon: Icon(Icons.arrow_drop_down_outlined, size: 40, color: Colors.grey),
+              //               ),
+              //             ),
+              //           ),*/
+              //           ]),
+              //     ),
+              //   ),
+              // ),
+              // SizedBox(
+              //   height: 10,
+              // ),
             ],
           ),
         ),
       ),
     );
   }
+
 }
